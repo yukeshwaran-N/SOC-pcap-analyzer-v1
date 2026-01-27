@@ -91,3 +91,38 @@ soc-pcap-analyzer/
 ├── output/                 # Generated reports
 ├── config.yaml             # Configuration file
 └── README.md
+```
+
+##  Disclaimer
+
+This tool is intended for defensive security research and educational purposes only.
+
+It is not a replacement for enterprise-grade SIEM, IDS, or EDR solutions.
+All detections should be validated by a human analyst before making security decisions.
+
+---
+
+## Future Improvements
+
+Enhanced behavioral baselining
+
+Reduction of false positives through context awareness
+
+Timeline-based visualization of network events
+
+Integration with external threat intelligence sources
+
+Export formats compatible with SOC workflows
+
+---
+
+## Contributing
+
+Contributions, ideas, and suggestions are welcome.
+Feel free to open issues or submit pull requests as the project evolves.
+
+---
+
+## License
+
+MIT License
