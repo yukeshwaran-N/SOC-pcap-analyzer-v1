@@ -1,0 +1,147 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "pcap-test"
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [
+                200,
+                0
+            ],
+            "name": "Webhook"
+        },
+        {
+            "parameters": {
+                "jsCode": "return [\n  {\n    json: {\n      pcap_to_analyze: $json.body.pcap_path,\n      report_id: $json.body.report_id,\n      risk_level: $json.body.risk_level,\n      summary: $json.body.summary,\n      status: \"PCAP path received\"\n    }\n  }\n];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                420,
+                0
+            ],
+            "name": "Normalize Payload"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "combinator": "or",
+                    "conditions": [
+                        {
+                            "leftValue": "={{$json.summary.critical}}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
+                        },
+                        {
+                            "leftValue": "={{$json.summary.high}}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
+                        },
+                        {
+                            "leftValue": "={{$json.summary.medium}}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
+                        }
+                    ]
+                },
+                "looseTypeValidation": true
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.3,
+            "position": [
+                650,
+                0
+            ],
+            "name": "Severity Check"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"text\": \"🚨 *SOC ALERT: Malicious PCAP Detected*\\n\\n📂 PCAP: {{$json.pcap_to_analyze}}\\n🆔 Report ID: {{$json.report_id}}\\n⚠️ Risk Level: {{$json.risk_level}}\\n\\n📊 Findings\\n• Critical: {{$json.summary.critical}}\\n• High: {{$json.summary.high}}\\n• Medium: {{$json.summary.medium}}\\n• Low: {{$json.summary.low}}\"\n}"
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.3,
+            "position": [
+                930,
+                -180
+            ],
+            "name": "Send Slack Alert"
+        },
+        {
+            "parameters": {
+                "project": {
+                    "mode": "list",
+                    "value": "PROJECT_ID"
+                },
+                "issueType": {
+                    "mode": "list",
+                    "value": "ISSUE_TYPE_ID"
+                },
+                "summary": "=PCAP Incident {{$json.report_id}}",
+                "description": "=Automated SOC alert generated from PCAP analysis.\n\nRisk Level: {{$json.risk_level}}\n\nFindings:\nCritical: {{$json.summary.critical}}\nHigh: {{$json.summary.high}}\nMedium: {{$json.summary.medium}}\nLow: {{$json.summary.low}}"
+            },
+            "type": "n8n-nodes-base.jira",
+            "typeVersion": 1,
+            "position": [
+                930,
+                160
+            ],
+            "name": "Create Jira Incident"
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Normalize Payload",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalize Payload": {
+            "main": [
+                [
+                    {
+                        "node": "Severity Check",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Severity Check": {
+            "main": [
+                [
+                    {
+                        "node": "Send Slack Alert",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Create Jira Incident",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
